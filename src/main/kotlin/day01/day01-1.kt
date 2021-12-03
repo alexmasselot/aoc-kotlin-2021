@@ -7,7 +7,7 @@ import java.io.File
 @Copyright L'Occitane 2021
  */
 fun main() {
-    val filename = "src/day01/depths.txt"
+    val filename = "src/main/kotlin/day01/depths.txt"
     val n = File(filename).readLines()
         .map { it.toInt() }
         .zipWithNext()
