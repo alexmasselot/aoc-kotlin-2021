@@ -16,6 +16,8 @@ fun minDichotQuadratic(p0: Pair<Int, Int>, p1: Pair<Int, Int>, f: (Int) -> Int):
     if (x0 == x1) {
         return p0
     }
+    // take the pair with the minimum second member.
+    // takes the second one if second values are identical
     fun minFromPair(p0: Pair<Int, Int>, p1: Pair<Int, Int>) = if (p0.second == p1.second) {
         p1
     } else if (p0.second < p1.second) {
