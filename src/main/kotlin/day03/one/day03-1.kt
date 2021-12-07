@@ -7,8 +7,6 @@ import kotlin.math.pow
 @author Alexandre Masselot
 @Copyright L'Occitane 2021
  */
-val nBit = 12;
-val mask = 0.rangeTo(nBit - 1).toList().map { 2.toDouble().pow(it).toInt() }.reversed()
 
 fun add(counter: List<Int>, diag: Int): List<Int> {
     return mask.map {
@@ -38,7 +36,6 @@ fun summarizeToInt(counter: List<Int>): Int {
 
 fun main() {
 
-    val filename = "src/main/kotlin/day03/diagnostic.txt"
     val diags = File(filename).readLines()
         .map { it.toInt(2) }
 
@@ -50,7 +47,6 @@ fun main() {
 
     println(finalCounter)
     val sumCounter = summarizeToInt(finalCounter)
-    val totalMask = mask.sum()
     val invertSumCounter = totalMask xor sumCounter
     println(sumCounter)
     println(invertSumCounter)
