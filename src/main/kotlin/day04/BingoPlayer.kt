@@ -1,5 +1,6 @@
 package day04
 
+import inputLines
 import java.io.File
 
 /**
@@ -36,11 +37,9 @@ fun playLastWinner(grids: GridCollection, draws: List<Int>): Pair<Int, Grid>? {
     return playLastWinner(playedGrids.removeWinners(), draws.drop(1))
 }
 fun main() {
-    val tag = "" //""-sample"
-    val fileGrids = "src/main/kotlin/day04/grids$tag.txt"
-    val fileDraw = "src/main/kotlin/day04/draws$tag.txt"
-    val grids = GridCollection.read(5, File(fileGrids).readLines())
-    val draws = File(fileDraw).readText().trim().split(",").map { it.toInt() }
+    val lines = inputLines("04", false)
+    val grids = GridCollection.read(5, lines.drop(2))
+    val draws = lines.first().split(",").map { it.toInt() }
 
     // Variant 1
     // val winner = play(grids, draws) ?: throw UnsupportedOperationException("No winner :(")
