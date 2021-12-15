@@ -15,3 +15,9 @@ fun inputLines(day:String, isSample:Boolean):List<String>{
 
     return File(filename).readLines()
 }
+
+fun CharSequence.splitIgnoreEmpty(vararg delimiters: String): List<String> {
+    return this.split(*delimiters).filter {
+        it.isNotEmpty()
+    }
+}
