@@ -2,106 +2,53 @@ package day15
 
 import inputLines
 import splitIgnoreEmpty
-
-/**
-@author Alexandre Masselot
-@Copyright L'Occitane 2021
- */
-data class Position(val x: Int, val y: Int) {
-    override fun toString() = "$x,$y"
-}
-
-data class Path(val positions: List<Position>, val totalRisk: Int) {
-    fun add(p: Position, risk: Int) = Path(positions.plus(p), totalRisk = totalRisk + risk)
-
-    fun canAdd(p: Position) = !positions.contains(p)
-
-    fun last() = positions.last()
-
-    override fun toString() = "$totalRisk: " + positions.map { it.toString() }.joinToString("-")
-}
-
-data class ChitonMap(
-    val risks: Array<IntArray>
-) {
-    val n = risks.size
-
-    val start = Position(0, 0)
-    val exit = Position(n - 1, n - 1)
-
-    fun riskAt(p: Position) = risks[p.y][p.x]
-
-    fun isInside(p: Position) =
-        p.x >= 0 && p.y >= 0 && p.x < n && p.y < n
-
-    fun neighborsOf(p: Position) =
-        listOf(1 to 0, 0 to 1, -1 to 0, 0 to -1)
-            .map { (i, j) -> Position(p.x + i, p.y + j) }
-            .filter { isInside(it) }
-
-    fun toString(path: Path) =
-        risks.mapIndexed { y, row ->
-            row.mapIndexed { x, r -> if (path.positions.contains(Position(x, y))) r else '.' }.joinToString("")
-        }.joinToString("\n")
+import utils.Matrix
+import utils.ShiftDirection
+import java.lang.Integer.min
 
 
-    companion object {
-        fun read(input: List<String>) =
-            ChitonMap(
-                input
-                    .filter { it.isNotBlank() }
-                    .map { l ->
-                        l.splitIgnoreEmpty("").map { it.toInt() }.toIntArray()
-                    }
-                    .toTypedArray()
-            )
-    }
-}
-data class SmallerRiskTo(
-    val total: List<List<Int?>>
-){
-
-}
-
-fun findWayThrough(map: ChitonMap): Path {
+fun findWayThrough(map: Matrix<Int>): Matrix<Int> {
     var bestRisk = Int.MAX_VALUE
 
-    fun handler(map: ChitonMap, acc: Path): Path? {
-        if (acc.totalRisk >= bestRisk) {
-            return null
+    fun handler(map: Matrix<Int>, acc: Matrix<Int?>): Matrix<Int> {
+//        println("--------------------")
+//        println(acc)
+        val neighborTots = acc.zipN(
+            acc.shift(ShiftDirection.UP, null),
+            acc.shift(ShiftDirection.DOWN, null),
+            acc.shift(ShiftDirection.LEFT, null),
+            acc.shift(ShiftDirection.RIGHT, null),
+        )
+            .map { it.filterNotNull() }
+        val newLowestRisk = map.zip(acc).zip(neighborTots).map { (loc, neighborsTot) ->
+            val (risk, tot) = loc
+            neighborsTot.minOrNull()
+                ?.let { minNeighbor -> if (tot == null) minNeighbor + risk else min(tot, minNeighbor + risk) }
         }
-        if (acc.last() == map.exit) {
-            println("$bestRisk // $acc")
-            println(map.toString(acc))
-            return if (acc.totalRisk < bestRisk) {
-                acc
-            } else {
-                null
-            }
-        }
-        val potential = map.neighborsOf(acc.last()).filter { acc.canAdd(it) }
-
-        return potential.mapNotNull { nextPos ->
-            val newPath = acc.add(nextPos, map.riskAt(nextPos))
-            val p = handler(map, newPath)
-            p?.let {
-                if (it.totalRisk <= bestRisk) {
-                    bestRisk = it.totalRisk
-                    p
-                } else {
-                    null
-                }
-            }
-        }.minByOrNull { it.totalRisk }
+        return if (newLowestRisk == acc) acc.map { it!! } else handler(map, newLowestRisk)
     }
 
-    return handler(map, Path(listOf(map.start), 0))!!
+    return handler(
+        map,
+        Matrix.fill<Int?>(map.nRows, map.nCols, null).set(0, 0, map.get(0, 0))
+    )
+
 }
 
 fun main() {
     val input = inputLines("15", false)
 
-    val map = ChitonMap.read(input)
+    val map = Matrix(
+        input.map { it.splitIgnoreEmpty("").map { it.toInt() } }
+    )
     val p = findWayThrough(map)
-    println(p)
+    println(p.get(map.nRows - 1, map.nCols - 1) - map.get(0, 0))
+
+    val f: (Int, Int) -> Int = { i, p -> (i - 1 + p) % 9 + 1 }
+    val largeRow = map.plusCols(map.map { f(it, 1) }).plusCols(map.map { f(it, 2) }).plusCols(map.map { f(it, 3) })
+        .plusCols(map.map { f(it, 4) })
+    val largeMap = largeRow.plusRows(largeRow.map { f(it, 1) }).plusRows(largeRow.map { f(it, 2) })
+        .plusRows(largeRow.map { f(it, 3) }).plusRows(largeRow.map { f(it, 4) })
+    val pLarge= findWayThrough(largeMap)
+    println(pLarge.get(largeMap.nRows - 1, largeMap.nCols - 1) - largeMap.get(0, 0))
 }

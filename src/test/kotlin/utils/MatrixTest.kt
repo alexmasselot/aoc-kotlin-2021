@@ -29,12 +29,23 @@ internal class MatrixTest {
         }
 
         @Test
-        fun `should fill with 0`(){
+        fun `should fill with 0`() {
             val got = Matrix.fill(7, 9, 0)
 
             assertThat(got.nRows).isEqualTo(7)
             assertThat(got.nCols).isEqualTo(9)
             assertThat(got.get(2, 4)).isEqualTo(0)
+        }
+
+        @Test
+        fun `set should chenge the value and keep the same size`() {
+            val given = Matrix.fill(7, 9, 0)
+            val got = given.set(6, 8, 42)
+
+            assertThat(got.nRows).isEqualTo(7)
+            assertThat(got.nCols).isEqualTo(9)
+            assertThat(got.get(2, 4)).isEqualTo(0)
+            assertThat(got.get(6, 8)).isEqualTo(42)
         }
     }
 
