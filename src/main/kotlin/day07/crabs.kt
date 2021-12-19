@@ -67,7 +67,7 @@ fun main() {
         fuel
     )
     // the brutal linear version
-    //0..(input.maxOrNull()!!)).mapIndexed { i, p -> i to fuel(p) }.minByOrNull { it.second }
+    // 0..(input.maxOrNull()!!)).mapIndexed { i, p -> i to fuel(p) }.minByOrNull { it.second }
     println(minFuel)
 
 }
