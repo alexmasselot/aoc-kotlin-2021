@@ -11,7 +11,7 @@ fun inputLines(day:String, isSample:Boolean):List<String>{
         ""
     }
 
-    val filename = "src/main/kotlin/day$day/input$tag.txt";
+    val filename = "src/main/kotlin/day$day/input$tag.txt"
 
     return File(filename).readLines()
 }

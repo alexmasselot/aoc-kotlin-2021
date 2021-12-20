@@ -20,6 +20,8 @@ data class Matrix<T>(
     val nRows = values.size
     val nCols = values.first().size
 
+    val dimensions = nRows to nCols
+
     fun get(row: Int, col: Int) = values[row][col]
     fun set(row: Int, col: Int, value: T): Matrix<T> {
         val rowOrig = values[row]
@@ -29,6 +31,11 @@ data class Matrix<T>(
                 .plus(values.drop(row + 1))
         )
     }
+
+    fun count(f: (T) -> Boolean) =
+        values.map {
+            it.filter(f).size
+        }.sum()
 
     fun shift(dir: ShiftDirection, defaultValue: T) =
         when (dir) {
@@ -75,6 +82,14 @@ data class Matrix<T>(
         }
         return others.fold(m0) { mAcc, other -> mAcc.zip(other).map { (xs, x) -> xs.plus(x) } }
     }
+
+    // add rows and cols on the surrounding
+    fun expand(value: T): Matrix<T> =
+        Matrix(
+            listOf(List(nCols + 2) { value })
+                .plus(values.map { listOf(value).plus(it).plus(value) })
+                .plus(listOf(List(nCols + 2) { value }))
+        )
 
     fun plusCols(other: Matrix<T>): Matrix<T> {
         if (other.nRows != nRows) {

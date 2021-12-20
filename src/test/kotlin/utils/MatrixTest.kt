@@ -50,6 +50,29 @@ internal class MatrixTest {
     }
 
     @Test
+    fun `should expand with -1`() {
+        val matrix = Matrix.create(
+            listOf(
+                listOf(1, 2, 3),
+                listOf(10, 20, 30),
+                listOf(100, 200, 300),
+            )
+        )
+        val got = matrix.expand(-1)
+
+        val expected = Matrix.create(
+            listOf(
+                listOf(-1, -1, -1, -1, -1),
+                listOf(-1, 1, 2, 3, -1),
+                listOf(-1, 10, 20, 30, -1),
+                listOf(-1, 100, 200, 300, -1),
+                listOf(-1, -1, -1, -1, -1),
+            )
+        )
+        assertThat(got).isEqualTo(expected)
+    }
+
+    @Test
     fun `map should transform`() {
         val matrix = Matrix.create(
             listOf(
