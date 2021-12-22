@@ -1,7 +1,6 @@
 package utils
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -35,6 +34,14 @@ internal class MatrixTest {
             assertThat(got.nRows).isEqualTo(7)
             assertThat(got.nCols).isEqualTo(9)
             assertThat(got.get(2, 4)).isEqualTo(0)
+        }
+
+        @Test
+        fun `should will with 40000`() {
+            val got = Matrix.fill(40000, 40000, 0)
+
+            assertThat(got.nRows).isEqualTo(40000)
+            assertThat(got.nCols).isEqualTo(40000)
         }
 
         @Test
