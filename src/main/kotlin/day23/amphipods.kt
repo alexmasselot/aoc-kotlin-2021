@@ -48,24 +48,60 @@ val debug = listOf(
   #########""".trimIndent()
 ).map { Board.fromString(it) }.toSet()
 
+val debugSignatures = setOf(
+    "52777095387709/10000011100011111110111",
+    "57175141833277/11000011100011011110111",
+    "58274653198909/11100011100010011110111",
+    "58274653198909/11100111100000011110111",
+    "",
+    "",
+)
+
 fun explore(board: Board) {
-
-
     val board2Cost = mutableMapOf<Board, Int>()
     var minCost = Int.MAX_VALUE
 
     val stack = ArrayDeque<Pair<Board, Int>>()
     stack.add(board.cleanUp())
+    println("out moves")
+    println(outMoves.joinToString("\n"))
+    println("in moves")
+    println(inMoves.joinToString("\n"))
 
     var i = 0
     do {
         i += 1
         val b = stack.removeFirst()
-        if (debug.contains(b.first)) {
-            println(b)
-        }
+//        println(b)
+//        println(b.first.rep)
+//        println(b.first.isOccupied.toString(2))
+
+//        if (debug.contains(b.first)) {
+//            println(b)
+//        }
         if (board2Cost[b.first]?.let { it < b.second } == true) {
             continue
+        }
+
+        if (debugSignatures.contains(b.first.signature())) {
+
+            println("========================================= DEBUG =====================================================")
+            println(b.first)
+            println(b.first.outMoves())
+            println(b.first.signature())
+            println(">>>>>>>>>>>>>>")
+            b.first.outMoves().forEach {
+                println("${b.first} \n $it \n${b.first.mutated(it)}\n${b.first.mutated(it).signature()}")
+                println(it.steps)
+                println("isReaching home ${it.isReachingHome}")
+
+            }
+            println("<<<<<<<<<<<<<<")
+            b.first.inMoves().forEach {
+                println("${b.first} \n $it \n${b.first.mutated(it)}\n${b.first.mutated(it).signature()}")
+                println(it.steps)
+                println("isReaching home ${it.isReachingHome}")
+            }
         }
         val nextOut = b.first.outMoves()
             .map { b.first.mutated(it) to (it.cost + b.second) }
@@ -77,18 +113,16 @@ fun explore(board: Board) {
         val nextIn = b.first.inMoves()
             .map { b.first.mutated(it) to (it.cost + b.second) }
 
-        val (nextInWin, nextInGo)= nextIn.partition { it.first.isDone }
-        println("---------------------------------")
-        println(b.first)
+        val (nextInWin, nextInGo) = nextIn.partition { it.first.isDone }
 //        nextOut.forEach { println(it.first) }
 //        println("===================")
 //        nextIn.forEach { println(it.first) }
 
 
         nextInWin.forEach {
-            println("WINNER ${it.second}")
 
             if (minCost > it.second) {
+                println("WINNER ${it.second}")
                 minCost = it.second
             }
         }

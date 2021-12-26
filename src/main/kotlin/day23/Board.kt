@@ -2,6 +2,9 @@ package day23
 
 import kotlin.math.pow
 
+const val ALLEY_LENGTH = 4
+const val HALLWAY_START = ALLEY_LENGTH * 4
+
 /**
 @author Alexandre Masselot
 @Copyright L'Occitane 2021
@@ -12,6 +15,13 @@ import kotlin.math.pow
 ####### 0  # 2  # 4  # 6 #######
       # 1  # 3  # 5  # 7 #
       ####################
+################################
+# 16 17 . 18 . 19 . 20 . 21 22 #
+####### 0  # 5  # 9  # 13 #######
+      # 1  # 6  # 10 # 14 #
+      # 2  # 7  # 11 # 15 #
+      # 4  # 8  # 12 # 16 #
+      #####################
       A -> 0
       B -> 1
       C -> 2
@@ -23,7 +33,7 @@ data class Move(
     val to: Int
 ) {
     val steps = computeSteps()
-    val isReachingHome = to < 8 && to / 2 == type
+    val isReachingHome = to < HALLWAY_START && to / ALLEY_LENGTH == type
 
     val bitMove = steps.fold(0) { acc, i -> acc + 1.shl(i) }
 
@@ -39,20 +49,21 @@ data class Move(
             return Move(type, to, from).steps.reversed().plus(to).minus(from)
         }
         /* same alley*/
-        if (from < 8 && from % 2 == 0 && from == to - 1) {
+        if (from < HALLWAY_START && from / ALLEY_LENGTH == to / ALLEY_LENGTH) {
             return listOf(to)
         }
         /* hallway move */
-        if (from >= 8 && to >= 8) {
+        if (from >= HALLWAY_START && to >= HALLWAY_START) {
             return ((from + 1)..to).toList()
         }
 
-        val turnLeft = from / 2 + 9
-        val turnRight = from / 2 + 10
+        val turnLeft = from / ALLEY_LENGTH + HALLWAY_START + 1
+        val turnRight = from / ALLEY_LENGTH + HALLWAY_START + 2
         /* go to Hallway */
-        if (to >= 8) {
+        if (to >= HALLWAY_START) {
             val turn = if (to <= turnLeft) turnLeft else turnRight
-            val exit = if (from % 2 == 1) listOf(from - 1) else emptyList()
+            val alleyExit = (from / ALLEY_LENGTH) * ALLEY_LENGTH
+            val exit = if (from == alleyExit) emptyList() else (alleyExit..(from - 1)).reversed()
             return exit.plus(turn).plus(Move(type, turn, to).steps)
         }
         /* go through hallway to climb up in another alley */
@@ -66,42 +77,30 @@ data class Move(
     companion object {
         fun typeCost(type: Int) = (10.0).pow(type).toInt()
 
-        val oversteps = setOf(
-            0 to 9,
-            0 to 10,
-            9 to 10,
-            2 to 10,
-            2 to 11,
-            10 to 11,
-            4 to 11,
-            4 to 12,
-            11 to 12,
-            6 to 12,
-            6 to 13,
-            12 to 13,
-            9 to 0,
-            10 to 0,
-            10 to 9,
-            10 to 2,
-            11 to 2,
-            11 to 10,
-            11 to 4,
-            12 to 4,
-            12 to 11,
-            12 to 6,
-            13 to 6,
-            13 to 12,
-        )
+
+        val oversteps =
+            (0..3).flatMap { i ->
+                listOf(
+                    ALLEY_LENGTH * i to i + HALLWAY_START + 1,
+                    ALLEY_LENGTH * i to i + HALLWAY_START + 2,
+                    i + HALLWAY_START + 1 to ALLEY_LENGTH * i,
+                    i + HALLWAY_START + 2 to ALLEY_LENGTH * i,
+                    i + HALLWAY_START + 1 to i + HALLWAY_START + 2,
+                    i + HALLWAY_START + 2 to i + HALLWAY_START + 1,
+                )
+            }.toSet()
     }
 }
 
 
-data class Board(val rep: Int, val isOccupied: Int) {
+data class Board(val rep: Long, val isOccupied: Int) {
+
+    fun signature() = "$rep/${isOccupied.toString(2)}"
 
     val isDone = isOccupied == 0
     override fun toString(): String {
-        val l = (0..14).map { i ->
-            val amphs = rep.shr(2 * i) % 4
+        val l = (0..(HALLWAY_START + 6)).map { i ->
+            val amphs = (rep.shr(2 * i) % 4).toInt()
             val isOcc = isOccupied.shr(i) % 2
             if (isOcc == 1) {
                 when (amphs) {
@@ -116,28 +115,37 @@ data class Board(val rep: Int, val isOccupied: Int) {
             }
         }
         return """#############
-#${l[8]}${l[9]}.${l[10]}.${l[11]}.${l[12]}.${l[13]}${l[14]}#
-###${l[0]}#${l[2]}#${l[4]}#${l[6]}###
-  #${l[1]}#${l[3]}#${l[5]}#${l[7]}#
-  #########"""
+#${l[HALLWAY_START]}${l[HALLWAY_START + 1]}.${l[HALLWAY_START + 2]}.${l[HALLWAY_START + 3]}.${l[HALLWAY_START + 4]}.${l[HALLWAY_START + 5]}${l[HALLWAY_START + 6]}#
+""" +
+            (0 until ALLEY_LENGTH).map { i ->
+                (if (i == 0) "##" else "  ") +
+                    "#${l[0 + i]}#${l[ALLEY_LENGTH + i]}#${l[2 * ALLEY_LENGTH + i]}#${l[3 * ALLEY_LENGTH + i]}#" +
+                    (if (i == 0) "##" else "")
+            }.joinToString("\n") +
+            "\n  #########"
     }
 
-    fun typeAt(pos: Int) = if (isOccupied.shr(pos) % 2 > 0) rep.shr(pos * 2) % 4 else null
+    fun typeAt(pos: Int) = if (isOccupied.shr(pos) % 2 > 0) (rep.shr(pos * 2) % 4).toInt() else null
     fun isOccupiedAt(pos: Int) = isOccupied.shr(pos) % 2 > 0
+    fun isAnyOccupiedAt(pos: IntRange) = pos.any { isOccupiedAt(it) }
+
     fun remove(pos: Int) =
         Board(
-            rep.and(3.shl(2 * pos).inv()),
+            rep.and(3L.shl(2 * pos).inv()),
             isOccupied.and(1.shl(pos).inv())
         )
 
     fun add(type: Int, pos: Int) =
         Board(
-            rep.or(type.shl(2 * pos)),
+            rep.or(type.toLong().shl(2 * pos)),
             isOccupied.or(1.shl(pos))
         )
 
-    fun isPossible(move: Move) =
-        (isOccupied.and(move.bitMove) == 0) && typeAt(move.from) == move.type
+    fun isPossible(move: Move): Boolean {
+        //println("$move ${typeAt(move.from) == move.type}\n${isOccupied.toString(2)}\n${move.bitMove.toString(2)}\n${move.steps}")
+        return (isOccupied.and(move.bitMove) == 0) && typeAt(move.from) == move.type
+    }
+
 
     fun mutated(move: Move) =
         if (move.isReachingHome) {
@@ -147,13 +155,11 @@ data class Board(val rep: Int, val isOccupied: Int) {
         }
 
     fun cleanUp() = (0..3).fold(this to 0) { acc, t ->
-        if (typeAt(2 * t) == t && typeAt(2 * t + 1) == t) {
-            acc.first.remove(2 * t).remove(2 * t + 1) to acc.second
-        } else if (typeAt(2 * t + 1) == t) {
-            acc.first.remove(2 * t + 1) to acc.second
-        } else {
-            acc.first to (acc.second + Move.typeCost(t))
-        }
+        val exit = t * ALLEY_LENGTH
+        val bottom = exit + ALLEY_LENGTH - 1
+        val toRemove = (exit..bottom).reversed().takeWhile { typeAt(it) == t }
+        val score = (1 until (ALLEY_LENGTH - toRemove.size)).sum() * Move.typeCost(t)
+        toRemove.fold(acc.first) { a, i -> a.remove(i) } to acc.second + score
     }
 
     fun outMoves() = outMoves
@@ -161,7 +167,7 @@ data class Board(val rep: Int, val isOccupied: Int) {
 
     fun inMoves() = inMoves
         .filter { isPossible(it) }
-        .filter { !isOccupiedAt(it.to + 1) }
+        .filter { !isAnyOccupiedAt((it.to + 1) until it.to + ALLEY_LENGTH) }
 
     companion object {
         /*
@@ -174,18 +180,34 @@ data class Board(val rep: Int, val isOccupied: Int) {
         val reTrim = """[\n# ]""".toRegex()
         fun fromString(str: String): Board {
 
-            val trimmed = str.replace(reTrim, "")
-            val chars = trimmed.toCharArray()
-            val repAndFill = listOf(11, 15, 12, 16, 13, 17, 14, 18, 0, 1, 3, 5, 7, 9, 10).mapIndexed { i, strPos ->
-                val locValue = when (chars[strPos]) {
-                    'A' -> 0
-                    'B' -> 1
-                    'C' -> 2
-                    'D' -> 3
-                    else -> 0
-                }
-                locValue.shl(2 * i) to (chars[strPos] != '.')
+            val str4 = if (ALLEY_LENGTH == 4) {
+                val ls = str.split("\n")
+                ls.take(3).plus(listOf("  #D#C#B#A#", "  #D#B#A#C#")).plus(ls.drop(3)).joinToString("\n")
+            } else {
+                str
             }
+
+            val trimmed = str4.replace(reTrim, "")
+            val chars = trimmed.toCharArray()
+            val repAndFill =
+                emptyList<Int>()
+                    .plus(
+                        (0 until 4)
+                            .flatMap { a ->
+                                (0 until ALLEY_LENGTH).map { d ->
+                                    11 + d * 4 + a
+                                }
+                            })
+                    .plus(listOf(0, 1, 3, 5, 7, 9, 10)).mapIndexed { i, strPos ->
+                        val locValue = when (chars[strPos]) {
+                            'A' -> 0L
+                            'B' -> 1L
+                            'C' -> 2L
+                            'D' -> 3L
+                            else -> 0
+                        }
+                        locValue.shl(2 * i) to (chars[strPos] != '.')
+                    }
             var rep = repAndFill.map { it.first }.sum()
             val isOccupied = repAndFill.map { it.second }.mapIndexed { i, b -> if (b) 1.shl(i) else 0 }.sum()
             return Board(rep, isOccupied)
@@ -227,14 +249,14 @@ data class Board(val rep: Int, val isOccupied: Int) {
 //                                .map { j -> Move(type, i, j) }
 //                        }
 //                    })
-//                // from not my alley to to the hallway
+//                // from not my alley to the hallway
 //                .plus(
             (0..3).flatMap { type ->
                 (0..3).filter { it != type }.flatMap { alley ->
-                    (8..14)
-                        .filter { !((it < 8) && (it / 2 == type || it / 2 == alley)) }
+                    (HALLWAY_START..(HALLWAY_START + 6))
+                        .filter { !((it / ALLEY_LENGTH == type) || (it / ALLEY_LENGTH == alley)) }
                         .flatMap { i ->
-                            listOf(Move(type, 2 * alley, i), Move(type, 2 * alley + 1, i))
+                            (0 until ALLEY_LENGTH).map { Move(type, ALLEY_LENGTH * alley + it, i) }
                         }
                 }
             }
@@ -242,17 +264,19 @@ data class Board(val rep: Int, val isOccupied: Int) {
                 // get out from blocking my alley
                 .plus(
                     (0..3).flatMap { type ->
-                        (8..14).map { i -> Move(type, 2 * type, i) }
+                        (0 until ALLEY_LENGTH - 1).flatMap { d ->
+                            (HALLWAY_START..(HALLWAY_START + 6)).map { i -> Move(type, ALLEY_LENGTH * type + d, i) }
+                        }
                     }
                 )
 
         // from anywhere to my alley
         val inMoves =
             (0..3).flatMap { type ->
-                (0..14)
-                    .filter { it != type * 2 + 1 && it != 2 * type }
+                (0..HALLWAY_START + 8)
+                    .filter { !(it < HALLWAY_START && it / ALLEY_LENGTH == type) }
                     .map { i ->
-                        Move(type, i, 2 * type)
+                        Move(type, i, ALLEY_LENGTH * type)
                     }
             }
 
