@@ -17,7 +17,7 @@ class BrutalCube(val dim: Int) {
     fun switch(sw: Switch) {
         range(sw.z).forEach { z ->
             range(sw.y).forEach { y ->
-                val x1 = max(-dim, min(dim,sw.x.first))
+                val x1 = max(-dim, min(dim, sw.x.first))
                 val x2 = max(-dim, min(dim, sw.x.second + 1))
                 bits.set(iCoords(x1, y, z), iCoords(x2, y, z), sw.isOn)
             }
@@ -56,6 +56,21 @@ fun part1(switches: List<Switch>) {
     println(cube.countOn())
 }
 
+fun part2(switches: List<Switch>) {
+
+    val cubes = switches.fold(emptyList<Cube>()) { cs, sw ->
+        val cube =
+            Cube(Coords(sw.x.first, sw.x.second), Coords(sw.y.first, sw.y.second), Coords(sw.z.first, sw.z.second))
+        if (sw.isOn) {
+            cs.flatMap { it.minus(cube) }.plus(cube)
+        } else {
+            cs.flatMap { it.minus(cube) }
+        }
+    }
+    println("${cubes.size} cubes")
+    println(cubes.sumOf { it.volume() })
+}
+
 /**
 @author Alexandre Masselot
 @Copyright L'Occitane 2021
@@ -66,5 +81,7 @@ fun main() {
     val switches = input.map { Switch.build(it) }
 
     part1(switches)
+
+    part2(switches)
 
 }
