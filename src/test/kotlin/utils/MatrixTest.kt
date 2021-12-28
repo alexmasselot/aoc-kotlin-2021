@@ -37,14 +37,6 @@ internal class MatrixTest {
         }
 
         @Test
-        fun `should will with 40000`() {
-            val got = Matrix.fill(40000, 40000, 0)
-
-            assertThat(got.nRows).isEqualTo(40000)
-            assertThat(got.nCols).isEqualTo(40000)
-        }
-
-        @Test
         fun `set should chenge the value and keep the same size`() {
             val given = Matrix.fill(7, 9, 0)
             val got = given.set(6, 8, 42)
@@ -123,6 +115,7 @@ internal class MatrixTest {
         assertThat(got).isEqualTo(expected)
     }
 
+
     @Test
     fun `map should zipN`() {
         val matrix = Matrix.create(
@@ -142,6 +135,35 @@ internal class MatrixTest {
                 listOf(listOf(1, 2, 3), listOf(2, 4, 6), listOf(3, 6, 9)),
                 listOf(listOf(10, 20, 30), listOf(20, 40, 60), listOf(30, 60, 90)),
                 listOf(listOf(100, 200, 300), listOf(200, 400, 600), listOf(300, 600, 900)),
+            )
+        )
+        assertThat(got).isEqualTo(expected)
+    }
+
+    @Test
+    fun `combining two matrices`() {
+        val matrix = Matrix.create(
+            listOf(
+                listOf(1, 2, 3),
+                listOf(10, 20, 30),
+                listOf(100, 200, 300),
+            )
+        )
+        val matrix2 = Matrix.create(
+            listOf(
+                listOf(true, false, true),
+                listOf(false, true, false),
+                listOf(true, false, true),
+            )
+        )
+
+        val got = matrix.combine(matrix2) { a, b -> (if (b) -a else a).toString() }
+
+        val expected = Matrix.create(
+            listOf(
+                listOf("-1", "2","-3"),
+                listOf("10","-20","30"),
+                listOf("-100","200","-300"),
             )
         )
         assertThat(got).isEqualTo(expected)
@@ -214,6 +236,67 @@ internal class MatrixTest {
                         listOf<Int?>(null, 1, 2),
                         listOf<Int?>(null, 10, 20),
                         listOf<Int?>(null, 100, 200),
+                    )
+                )
+            assertThat(got).isEqualTo(expected)
+        }
+
+        @Test
+        fun `circular shift up`() {
+            val got = matrix.cshift(ShiftDirection.UP)
+
+            val expected =
+                Matrix.create(
+                    listOf(
+                        listOf<Int?>(10, 20, 30),
+                        listOf<Int?>(100, 200, 300),
+                        listOf<Int?>(1, 2, 3),
+                    )
+                )
+            assertThat(got).isEqualTo(expected)
+        }
+
+        @Test
+        fun `circular shift down`() {
+            val got = matrix.cshift(ShiftDirection.DOWN)
+
+            val expected =
+                Matrix.create(
+                    listOf(
+                        listOf<Int?>(100, 200, 300),
+                        listOf<Int?>(1, 2, 3),
+                        listOf<Int?>(10, 20, 30),
+                    )
+                )
+            assertThat(got).isEqualTo(expected)
+        }
+
+
+        @Test
+        fun `circular shift right`() {
+            val got = matrix.cshift(ShiftDirection.RIGHT)
+
+            val expected =
+                Matrix.create(
+                    listOf(
+                        listOf<Int?>(2, 3, 1),
+                        listOf<Int?>(20, 30, 10),
+                        listOf<Int?>(200, 300, 100),
+                    )
+                )
+            assertThat(got).isEqualTo(expected)
+        }
+
+        @Test
+        fun `circular shift left`() {
+            val got = matrix.cshift(ShiftDirection.LEFT)
+
+            val expected =
+                Matrix.create(
+                    listOf(
+                        listOf<Int?>(3, 1, 2),
+                        listOf<Int?>(30, 10, 20),
+                        listOf<Int?>(300, 100, 200),
                     )
                 )
             assertThat(got).isEqualTo(expected)

@@ -1,7 +1,5 @@
 package utils
 
-import java.lang.Integer.max
-
 /**
 @author Alexandre Masselot
 @Copyright L'Occitane 2021
@@ -14,6 +12,12 @@ enum class ShiftDirection {
     RIGHT
 }
 
+class InconsistentNumberOfColumnsException(n: Int, nCols: Int) :
+    RuntimeException("Not all lines have the same number of element $n/$nCols")
+
+class NotSAmeDimensionsException(nRows1: Int, nCols1: Int, nRows2: Int, nCols2: Int) :
+    RuntimeException("Matrices do not have the same size ($nRows1, $nCols1) vs ($nRows2, $nCols2)")
+
 data class Matrix<T>(
     val values: List<List<T>>
 ) {
@@ -21,6 +25,12 @@ data class Matrix<T>(
     val nCols = values.first().size
 
     val dimensions = nRows to nCols
+
+    init {
+        values.find { it.size != nCols }?.let {
+            throw InconsistentNumberOfColumnsException(it.size, nCols)
+        }
+    }
 
     fun get(row: Int, col: Int) = values[row][col]
     fun set(row: Int, col: Int, value: T): Matrix<T> {
@@ -51,6 +61,24 @@ data class Matrix<T>(
             )
         }
 
+    fun cshift(dir: ShiftDirection) =
+        when (dir) {
+            ShiftDirection.UP -> Matrix(values.drop(1).plusElement(values.first()))
+            ShiftDirection.DOWN -> Matrix(
+                listOf(values.last()).plus(values.dropLast(1))
+            )
+            ShiftDirection.LEFT -> Matrix(
+                values.map { listOf(it.last()).plus(it.dropLast(1)) }
+            )
+            ShiftDirection.RIGHT -> Matrix(
+                values.map { it.drop(1).plus(it.first()) }
+            )
+        }
+
+    fun <S, R> combine(other: Matrix<S>, op: (T, S) -> R): Matrix<R> {
+        return zip(other).map { (a, b) -> op(a, b) }
+    }
+
     fun <S> map(f: (T) -> S) =
         Matrix(
             values.map {
@@ -59,12 +87,7 @@ data class Matrix<T>(
         )
 
     fun <S> zip(other: Matrix<S>): Matrix<Pair<T, S>> {
-        if (other.nRows != nRows) {
-            throw ArrayIndexOutOfBoundsException(max(other.nRows - 1, nRows - 1))
-        }
-        if (other.nCols != nCols) {
-            throw ArrayIndexOutOfBoundsException(max(other.nCols - 1, nCols - 1))
-        }
+        assertSameSize(other)
         return Matrix(
             values.zip(other.values).map { (row1, row2) ->
                 row1.zip(row2)
@@ -74,12 +97,7 @@ data class Matrix<T>(
 
     fun zipN(vararg others: Matrix<T>): Matrix<List<T>> {
         val m0 = map { listOf(it) }
-        others.find { it.nRows != nRows }?.let {
-            throw ArrayIndexOutOfBoundsException(max(it.nRows - 1, nRows - 1))
-        }
-        others.find { it.nCols != nCols }?.let {
-            throw ArrayIndexOutOfBoundsException(max(it.nCols - 1, nCols - 1))
-        }
+        others.forEach { assertSameSize(it) }
         return others.fold(m0) { mAcc, other -> mAcc.zip(other).map { (xs, x) -> xs.plus(x) } }
     }
 
@@ -92,9 +110,7 @@ data class Matrix<T>(
         )
 
     fun plusCols(other: Matrix<T>): Matrix<T> {
-        if (other.nRows != nRows) {
-            throw ArrayIndexOutOfBoundsException(max(other.nRows - 1, nRows - 1))
-        }
+        assertSameSizeRows(other)
         return Matrix(
             values.zip(other.values).map { (r, ro) ->
                 r.plus(ro)
@@ -103,12 +119,27 @@ data class Matrix<T>(
     }
 
     fun plusRows(other: Matrix<T>): Matrix<T> {
-        if (other.nCols != nCols) {
-            throw ArrayIndexOutOfBoundsException(max(other.nCols - 1, nCols - 1))
-        }
+        assertSameSizeCols(other)
         return Matrix(
             values.plus(other.values)
         )
+    }
+
+    private fun <S> assertSameSize(other: Matrix<S>) {
+        assertSameSizeRows(other)
+        assertSameSizeCols(other)
+    }
+
+    private fun <S> assertSameSizeRows(other: Matrix<S>) {
+        if (other.nRows != nRows) {
+            throw NotSAmeDimensionsException(nRows, nCols, other.nRows, other.nCols)
+        }
+    }
+
+    private fun <S> assertSameSizeCols(other: Matrix<S>) {
+        if (other.nCols != nCols) {
+            throw NotSAmeDimensionsException(nRows, nCols, other.nRows, other.nCols)
+        }
     }
 
     fun toString(sep: String = " ") =
